@@ -1,0 +1,71 @@
+cabal-version:      3.4
+name:               rhine-nix
+version:            0.1.0.0
+synopsis:           Nix frontend for Rhine ✨
+-- description:
+homepage:           https://github.com/ners/rhine-nix
+license:            Apache-2.0
+license-file:       LICENCE.md
+author:             ners
+maintainer:         ners@gmx.ch
+-- copyright:
+category:           System
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+-- extra-source-files:
+
+common warnings
+    default-language: GHC2021
+    ghc-options:
+      -Weverything
+      -Wno-unsafe
+      -Wno-missing-safe-haskell-mode
+      -Wno-missing-export-lists
+      -Wno-missing-import-lists
+      -Wno-missing-kind-signatures
+      -Wno-all-missed-specialisations
+
+    default-extensions:
+      ApplicativeDo
+      BlockArguments
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DerivingStrategies
+      DerivingVia
+      ExplicitNamespaces
+      LambdaCase
+      NoImplicitPrelude
+      OverloadedLabels
+      OverloadedRecordDot
+      OverloadedStrings
+      RecordWildCards
+      RecursiveDo
+      StrictData
+      TypeFamilies
+      ViewPatterns
+
+executable rhine-nix
+    import:           warnings
+    main-is:          Main.hs
+    build-depends:
+        aeson,
+        ansi-terminal,
+        base,
+        binary,
+        bytestring,
+        containers,
+        dimensional,
+        numtype-dk,
+        rhine,
+        text,
+        time,
+        typed-process,
+    hs-source-dirs:   app
+    default-language: GHC2021
+    other-modules:
+      Bytes,
+      Event,
+      FileTransferProgress,
+      NixBuildClock,
