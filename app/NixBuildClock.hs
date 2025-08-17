@@ -15,7 +15,7 @@ import Data.Text qualified as Text
 import Data.Time (getCurrentTime)
 import Event (Event)
 import FRP.Rhine hiding (first, second)
-import System.IO (Handle, hIsClosed)
+import System.IO (Handle)
 import System.Process.Typed
 import Prelude
 
@@ -42,8 +42,8 @@ instance (MonadIO m, Binary b) => Clock (ExceptT () m) (BinaryClock b) where
                         time <- liftIO getCurrentTime
                         pure (Just (time, Right b), newDecoder `Binary.pushChunk` rest)
                     dec -> do
-                        (`when` throwE ()) =<< liftIO (hIsClosed handle)
                         chunk <- liftIO $ ByteString.hGet handle ByteString.defaultChunkSize
+                        when (ByteString.null chunk) $ throwE ()
                         pure (Nothing, dec `Binary.pushChunk` chunk)
 
 newtype NixBuildClock = NixBuildClock {packages :: [Text]}
@@ -63,8 +63,9 @@ instance (MonadIO m, MonadFail m) => Clock (ExceptT ExitCode m) NixBuildClock wh
         (binaryClock, initialTime) <-
             mapExceptT
                 ( fmap . bimap (const $ ExitFailure 1) . first $
-                    hoistS $
-                        mapExceptT (either (\() -> Left <$> waitExitCode process) (pure . Right) =<<)
+                    hoistS \runBinaryClock -> do
+                        getExitCode process >>= maybe (pure ()) throwE
+                        mapExceptT (either (\() -> Left <$> waitExitCode process) (pure . Right) =<<) runBinaryClock
                 )
                 $ initClock BinaryClock{handle = getStderr process}
         let runningClock = binaryClock >>> arrM \(time, e) -> either fail (pure . (time,)) e

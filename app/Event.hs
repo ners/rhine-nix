@@ -39,7 +39,7 @@ data ActivityEvent
     | Progress {done :: Int, expected :: Int, running :: Int, failed :: Int}
     | SetExpected {activityType :: ActivityType, expected :: Int}
     | FetchStatus {lastLine :: Text}
-    -- \| OtherResult {resultType :: ResultType, fields :: [Value]}
+    | OtherResult {resultType :: ResultType, fields :: [Value]}
     deriving stock (Show)
 
 instance FromJSON Event where
@@ -95,8 +95,7 @@ instance FromJSON ActivityEvent where
                     ResFetchStatus -> do
                         lastLine <- parseJSON (fields !! 0)
                         pure FetchStatus{..}
-                    -- _ -> pure OtherResult{..}
-                    _ -> fail $ "invalid result type " <> show resultType
+                    _ -> pure OtherResult{..}
             t -> fail $ "invalid action: " <> show t
 
 consumeUntil :: (Word8 -> Bool) -> Binary.Consume ()

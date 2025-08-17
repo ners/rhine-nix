@@ -1,5 +1,11 @@
 {
-  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    rhine = {
+      url = "github:turion/rhine";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
 
   outputs = inputs:
     let
@@ -17,11 +23,13 @@
       };
       pname = "rhine-nix";
       overlay = lib.composeManyExtensions [
+        inputs.rhine.overlays.localOverlay
         (final: prev: {
           haskell = prev.haskell // {
             packageOverrides = lib.composeManyExtensions [
               prev.haskell.packageOverrides
-              (hfinal: hprev: {
+              (hfinal: hprev: with prev.haskell.lib.compose; {
+                changeset = doJailbreak (unmarkBroken hprev.changeset);
                 ${pname} = hfinal.callCabal2nix pname (sourceFilter ./.) { };
               })
             ];

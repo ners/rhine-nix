@@ -19,12 +19,18 @@ addProgress :: FileTransferProgress -> Seq FileTransferProgress -> Seq FileTrans
 addProgress p = keepLastSecond . pushEvent
   where
     pushEvent = (|> p)
-    keepLastSecond = Seq.takeWhileR (\p' -> diffTime @Rational (time p) (time p') < 1 *~ second)
+    keepLastSecond = Seq.dropWhileL ((1 *~ second <) . diffTime @Rational (time p) . time)
+
+getProgress :: Seq FileTransferProgress -> Maybe (FileTransferProgress, Bytes Rational, Time Rational)
+getProgress progress
+    | _ :> p@FileTransferProgress{..} <- Seq.viewr progress
+    , FileTransferProgress{done = (done -) -> dd, time = diffTime time -> dt} :< _ <- Seq.viewl progress =
+        Just (p, dd, dt)
+getProgress _ = Nothing
 
 getProgressAndSpeed :: Seq FileTransferProgress -> Maybe (FileTransferProgress, TransferSpeed Rational)
 getProgressAndSpeed progress
-    | _ :> p@FileTransferProgress{..} <- Seq.viewr progress
-    , FileTransferProgress{done = (done -) -> dd, time = diffTime time -> dt} :< _ <- Seq.viewl progress
+    | Just (p, dd, dt) <- getProgress progress
     , dt > 0 *~ second =
         Just (p, dd / dt)
 getProgressAndSpeed _ = Nothing
